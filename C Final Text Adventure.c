@@ -19,6 +19,15 @@ typedef struct{//This defines the item class. Both the player and enemies should
    int accuracy; //x/100 / x%
 }item;
 
+typedef struct{//This defines the player class. This should be useful for the player's stats and inventory.
+   char name[100];
+   int health;
+   int money;
+   item weapon;
+   item inventory[4];
+
+}player;
+
 int gameover(){//This should be the game over screen
    printf("GAME OVER\n");
    restart();
@@ -135,6 +144,8 @@ int Battle(int health, int money, char name[100], int enemyHealth, int enemyDama
       gameover();
    }
 }
+
+
 int main() {
    setbuf(stdout, NULL);
    startadv();
