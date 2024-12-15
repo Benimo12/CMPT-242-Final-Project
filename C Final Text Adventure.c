@@ -22,6 +22,7 @@ typedef struct
    char name[100];
    int health;
    int money;
+   int baseDamage;
    item weapon;
    item inventory[4];
 } player;
@@ -166,8 +167,9 @@ int Battle(player *player, enemy *opponent)
 
       if (choice == 'A' || choice == 'a')
       {
-         opponent->health -= player->weapon.damage;
-         printf("You dealt %d damage to %s!\n", player->weapon.damage, opponent->name);
+         int damage = player->weapon.damage + player->baseDamage;
+         opponent->health -= damage;
+         printf("You dealt %d damage to %s!\n", damage, opponent->name);
       }
       else if (choice == 'D' || choice == 'd')
       {
@@ -243,7 +245,7 @@ void Encounter(player *player) {
 
         case 1: // Mysterious merchant
             printf("You meet a mysterious merchant on the road. What do you do?\n");
-            printf("(T)rade items\n(B)uy a health potion for 10G\n(I)gnore the merchant\n");
+            printf("(T)rade goods\n(B)uy a damage potion for 10G\n(I)gnore the merchant\n");
             scanf(" %c", &choice);
 
             if (choice == 'T' || choice == 't') {
@@ -251,10 +253,10 @@ void Encounter(player *player) {
             } else if (choice == 'B' || choice == 'b') {
                 if (player->money >= 10) {
                     player->money -= 10;
-                    gainHealth(player, 5);
-                    printf("You bought a health potion and gained 5 health!\n");
+                    player->baseDamage += 1;
+                    printf("You bought a damage potion and gained 1 damage!\n");
                 } else {
-                    printf("You don't have enough gold to buy a health potion.\n");
+                    printf("You don't have enough gold to buy a damage potion.\n");
                 }
             } else if (choice == 'I' || choice == 'i') {
                 printf("You ignore the merchant and continue on your journey.\n");
@@ -272,9 +274,10 @@ void Encounter(player *player) {
                 int donation = rand() % 10 + 5;
                 if (player->money >= donation) {
                     player->money -= donation;
-                    printf("You give the traveler %dG. They thank you and give you a small trinket!\n", donation);
+                    printf("You give the traveler %dG. They thank you and give you a health potion!\n", donation);
+                    gainHealth(player, 5);
                 } else {
-                    printf("You don't have enough gold to help the traveler.\n");
+                    printf("The sum you offer is so small, that even this lost traveler feels wrong accepting it.\n");
                 }
             } else if (choice == 'A' || choice == 'a') {
                 printf("The traveler gives you a map fragment as thanks for your kindness.\n");
@@ -332,7 +335,7 @@ int main()
 {
    srand(time(NULL)); // Seed for random numbers
 
-   player player = {"Hero", 20, 50, WoodenSword, {compass, HealthPotion}};
+   player player = {"Hero", 20, 50, 0, WoodenSword, {compass, HealthPotion}};
 
    startadv(&player);
    GameLoop(&player);
