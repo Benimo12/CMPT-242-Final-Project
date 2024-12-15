@@ -1,180 +1,341 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-//Final project by Ben Onime, Arko Chakraborty & Misha Smirnov
-//Contributions (Please, once you edit this file, put in your contributions in front of your names and also, please explain what your tidbit of code does or is supposed to do.)
-//Ben: Base File: The enemy and item classes/structs, The Game Over Screen, The Restart menu, Status screens, Starting adventures, Battle scenarios, Basic money and gameplay systems.
-//Arko: 
-//Misha: Created the player class, fixed up old structs and made graphical interfaces.
-typedef struct{//This defines the enemy class. This should be useful for battle instances.
+
+typedef struct
+{ // Enemy class
    char name[20];
    int health;
    int damage;
-}enemy;
+} enemy;
 
-typedef struct{//This defines the item class. Both the player and enemies should be able to hold items.
+typedef struct
+{ // Item class
    char name[50];
-   int damage; //Attack points
-   int cost; //Cost to buy or trade for in shop
-   int accuracy; //x/100 / x%
-}item;
+   int damage;
+   int cost;
+   int accuracy;
+} item;
 
-typedef struct{//This defines the player class. This should be useful for the player's stats and inventory.
+typedef struct
+{ // Player class
    char name[100];
    int health;
    int money;
    item weapon;
    item inventory[4];
+} player;
 
-}player;
-
-// item name, damage, cost and accuracy (accuracy can be removed.)
+// Enemy and item definitions
 item compass = {"Compass", 0, 0, 0};
 item HealthPotion = {"Health Potion", -2, 10, 0};
 item WoodenSword = {"Wooden Sword", 2, 20, 100};
 
-//enemy name, health and damage
 enemy slime = {"Slime", 5, 1};
 enemy rat = {"Rat", 3, 1};
 
-int gameover(){//This should be the game over screen
-   printf("GAME OVER\n");
-   restart();
-   return 0;
-}
-int restart(){//If all things go well, this should go to startadv
-   char input;
-   printf(">Restart?(y/n)\n");
-   scanf("%c\n",input);
-   if (input == 'y' || input == 'Y'){//Goes to the beginning of the adventure
-      startadv();
-   }else if (input == 'n' ||input == 'N'){//Completely exits the program
-      return 0;
-   }
-}
-int HealthStatus(int health){//This is to check how much health the player has.
-   if (health < 0){health = 0;}
-   printf ("Health: %d\n", health);
-   if (health = 0){gameover(); return 0;}
-}
+enum Location
+{
+   Court,
+   City,
+   Forest,
+   Mountains
+} loc = Court; // global variable that tracks where we decided to go (court is essentially null, we start there since we havent chosen anything yet)
 
-int itemStatus(int n, char inventory[n]){//This checks the amount of items that can be held.
-   printf("Items in your inventory are:");
-   for(int i; i < n-1; i++){
-      printf(inventory[i],"\n");
-   }
-   return 0;
-}
 
-int EnemyHealthStatus(int health){//This is to check how much health the enemy has.
-   printf("Enemy Health: %d\n", health);
-   return health;
-}
+// to stop errors
+int gameover();
+int restart();
+void gainGold(player *player, int amount);
+void loseHealth(player *player, int amount);
+void gainHealth(player *player, int amount);
+int Battle(player *player, enemy *opponent);
+void Encounter(player *player);
+void GameLoop(player *player);
 
-int MoneyStatus(int money){printf ("Money: %dG\n", money);}//Checks the amount of money being held.
+int startadv(player *p)
+{ // Adventure starts here.
 
-int startadv(){//Adventure starts here.
-   int health = 10, key = 0, money = 0, damage = 1;
-   char name;
    printf("CMPT 242 FINAL PROJECT!!!\n");
    printf("PRESENTED BY BEN, ARKO & MISHA\n");
-   HealthStatus(health);
-   MoneyStatus(money);
    printf("Hey! Wake up!\n");
    printf("You have been summoned to the castle!\n");
    printf("King: Speak Serf! What is your name?\n");
    printf("You: My Liege! My name is ");
-   scanf("%s\n", name);
-   printf("King: Stand %s!\n", name);
+   scanf("%49s", p->name);
+   printf("King: Stand %s!\n", p->name);
    printf("King: You stand here because of your treacherous actions against me!\n");
    printf("King: Luckily, I'm feeling in a good mood so, rather than kill you or banish you, I will give you a choice of 3 errands.\n");
    printf("King: You can go to the (F)orest to retrieve my crown, the (C)ity to retrieve my court's archives or to the (M)ountains to defeat the beast of unknown depths.\n");
+
    char choice;
    printf("Which will it be?\n(F)orest\n(C)ity\n(M)ountains\n");
-   scanf("%c\n",choice);
-   printf("King: Good Choice! Here is 50 G! and a compass.\n");
-   money = money+50;
-   if (choice == 'c' || choice == 'C'){
+   scanf(" %c", &choice);
+  
+
+   if (choice == 'c' || choice == 'C')
+   {
       printf("King: Alright, I'll need you to head west from the town square into the church to retrieve my court's documents.\n");
       printf("King: The Priest stole them from me. Consider this a pardon for your on treachery.\n");
       printf("You arrive at the city...\n");
-      City(health, money, name);
-   }else if (choice == 'F' || choice == 'f'){
+      loc = City;
+   }
+   else if (choice == 'F' || choice == 'f')
+   {
       printf("King: Well, this is the least you could do for your attempted assassination.\n");
       printf("King: Now you will endorse my monarchy and MY leadership as your punishment\n");
       printf("You go to the forest...\n");
-      Forest(health, money, name);
-   }else if (choice == 'M' || choice == 'm'){
+      loc = Forest;
+   }
+   else if (choice == 'M' || choice == 'm')
+   {
       printf("King: Change of heart? Community Service? Hmm...\n");
       printf("King: Well, you can service the community by getting rid of that monster in the mountains. Maybe then could I pardon you...\n");
       printf("You go to the Mountains...\n");
-      Mountains(health, money, name);
+      loc = Mountains;
    }
-}
-int City(int health, int money, char name[100]){//This is for the City storyline
-   HealthStatus(health);
-   MoneyStatus(money);
-   char choice;
-   printf("You are at the town square, Where do you go?\n");
-   printf("(N)orth: Market Square\n(S)outh: Church\n(E)ast:Ranches and stables\n(W)est:WestBridge");
-   scanf("%c\n",choice);
-}
-int Forest(int health, int money, char name[100]){// This is for the forest storyline
-   HealthStatus(health);
-   MoneyStatus(money);
-}
-int Mountains(int health, int money, char name[100]){//This is for the mountains storyline
-   HealthStatus(health);
-   MoneyStatus(money);
-}
-int Shop(int money){//Shop to buy stuff from. Should only be accessible in the city storyline
-   printf("Welcome to the Shop! what do you wanna buy?\n");
-   MoneyStatus(money);
-}
-int Battle(int health, int money, char name[100], int enemyHealth, int enemyDamage, char enemyname[20], int damage){
-   //health = player's health
-   //money = player's money
-   //name = your character's name
-   //enemyHealth = current opponent's health. Should be declared as enemy.health to be used properly.
-   //enemyDamage = how much the current opponent deals in a single turn. There are no Critical hit values or Accuracy values for simplicity sake (as simple as this project can be.) Can be implemented as enemy.damage or enemy.damage+item.damage
-   //enemyname = current opponent's name. This can hold a maximum of 20 characters. Should be declared as enemy.name
-   //damage = player's attack points. This is the amount of hitpoints the player can take from the enemy in a single turn. This is by default one but can be changed with damage += item.damage
-   char interact;
-   printf("You have encountered %c!\n", enemyname);
-   while (enemyHealth > 0 && health > 0){
-      HealthStatus(health);
-      EnemyHealthStatus(enemyHealth);
-      printf("How do you want to interact?\n(A)ttack?\n(D)efend?\n(R)un?\n");
-      scanf("%c\n",interact);
-      if (interact == 'A'||interact == 'a'){//Attack scenario. Takes off hitpoints from the opponent during your turn.
-         enemyHealth -= damage;
-         printf("You took %d from %c!\n", damage, enemyname);
-      }else if (interact == 'D'||interact == 'd'){//This adds the amount of damage the enmy would have done to the player for that turn so that it gets subtracted when the enemy attacks.
-         health += enemyDamage;
-         printf("You chose to defend yourself this round!\n");
-      }else if (interact == 'R'||interact == 'r'){//This exits the battle scenario.
-         printf("You fled the conflict!\n");
-         return health, money;
-      }
-      //This is the enemy's turn. This can be a case or if-then-else tree if you want.
-      health -= enemyDamage;
-      printf("%c took %d from you!\n", enemyname, enemyDamage);
-   }
-   if (enemyHealth <= 0){//This should reward the player then exit the battle scenario
-      printf("You have slain %c!\n", enemyname);
-      int reward = rand() % 500; //This is how the random function works for some reason...
-      money += reward;
-      return health, money;
-   }else if (health <= 0){//This should go to the gameover screen.
-      gameover();
-   }
+
+   printf("King: Good Choice! Here is 50 G! and a compass.\n");
+   gainGold(p, 50);
 }
 
 
-int main() {
-   setbuf(stdout, NULL);
-   startadv();
+int gameover()
+{ // Game over screen
+   printf("GAME OVER\n");
+   restart();
    return 0;
 }
-//(._.) slime
-//\(_)^> rat
+
+int restart()
+{ // Restart option
+   char input;
+   printf(">Restart?(y/n)\n");
+   scanf(" %c", &input);
+   if (input == 'y' || input == 'Y')
+   {
+      return 1; // Restart game
+   }
+   else
+   {
+      return 0; // Exit program
+   }
+}
+
+void gainGold(player *player, int amount)
+{
+   player->money += amount;
+   printf("[i] You %s %dG! Current Money: %dG\n", amount > 0 ? "gained" : "lost", amount, player->money);
+}
+
+void loseHealth(player *player, int amount)
+{
+   player->health -= amount;
+   if (player->health <= 0)
+   {
+      gameover();
+   }
+   else
+   {
+      printf("[i] You lost %d health! Current Health: %d\n", amount, player->health);
+   }
+}
+
+void gainHealth(player *player, int amount)
+{
+   if (amount < 0)
+   {
+      loseHealth(player, amount);
+      return;
+   }
+   player->health += amount;
+   printf("[i] You gained %d health! Current Health: %d\n", amount, player->health);
+}
+
+int Battle(player *player, enemy *opponent)
+{
+   printf("[i] You have encountered a %s!\n", opponent->name);
+
+   while (player->health > 0 && opponent->health > 0)
+   {
+      printf("[i] Your Health: %d\nEnemy Health: %d\n", player->health, opponent->health);
+
+      printf("How do you want to interact?\n(A)ttack\n(D)efend\n(R)un\n");
+      char choice;
+      scanf(" %c", &choice);
+
+      if (choice == 'A' || choice == 'a')
+      {
+         opponent->health -= player->weapon.damage;
+         printf("You dealt %d damage to %s!\n", player->weapon.damage, opponent->name);
+      }
+      else if (choice == 'D' || choice == 'd')
+      {
+         int reducedDamage = opponent->damage / 2;
+         loseHealth(player, reducedDamage);
+         printf("You defended yourself and reduced incoming damage to %d!\n", reducedDamage);
+      }
+      else if (choice == 'R' || choice == 'r')
+      {
+         printf("You fled the battle!\n");
+         return 1; // Fled successfully
+      }
+
+      if (opponent->health > 0)
+      {
+         loseHealth(player, opponent->damage);
+         printf("%s dealt %d damage to you!\n", opponent->name, opponent->damage);
+      }
+   }
+
+   if (player->health > 0)
+   {
+      printf("You defeated the %s!\n", opponent->name);
+      int reward = rand() % 20 + 10; // Random gold reward
+      gainGold(player, reward);
+      return 1; // Battle won
+   }
+
+   return 0; // Player died
+}
+
+void Encounter(player *player) {
+    int scenario = rand() % 4; // Choose a random scenario
+
+    switch (scenario) {
+        case 0: // Bandits
+            printf("You are ambushed by a group of bandits! What do you do?\n");
+            printf("(F)ight them\n(B)ribe them\n(R)un away\n");
+            char choice;
+            scanf(" %c", &choice);
+
+            if (choice == 'F' || choice == 'f') {
+                enemy opponents[] = {slime, rat};
+                Battle(player, &opponents[rand() % 2]);
+            } else if (choice == 'B' || choice == 'b') {
+                int bribe = rand() % 20 + 10;
+                if (player->money >= bribe) {
+                    player->money -= bribe;
+                    printf("You bribed the bandits with %dG and they let you go.\n", bribe);
+                } else {
+                    printf("You don't have enough money to bribe them! They attack you instead.\n");
+                    enemy opponents[] = {slime, rat};
+                    enemy selected = opponents[rand() % 2];
+                    Battle(player, &selected);
+                }
+            } else if (choice == 'R' || choice == 'r') {
+                printf("You try to run away...\n");
+                if (rand() % 2 == 0) {
+                    printf("You escaped successfully!\n");
+                } else {
+                    printf("The bandits catch you!\n");
+                    enemy opponents[] = {slime, rat};
+                    enemy selected = opponents[rand() % 2];
+                    Battle(player, &selected);
+                }
+            } else {
+                printf("Invalid choice. The bandits attack you!\n");
+                enemy opponents[] = {slime, rat};
+                enemy selected = opponents[rand() % 2];
+                Battle(player, &selected);
+            }
+            break;
+
+        case 1: // Mysterious merchant
+            printf("You meet a mysterious merchant on the road. What do you do?\n");
+            printf("(T)rade items\n(B)uy a health potion for 10G\n(I)gnore the merchant\n");
+            scanf(" %c", &choice);
+
+            if (choice == 'T' || choice == 't') {
+                printf("The merchant isn't interested in trades right now.\n");
+            } else if (choice == 'B' || choice == 'b') {
+                if (player->money >= 10) {
+                    player->money -= 10;
+                    gainHealth(player, 5);
+                    printf("You bought a health potion and gained 5 health!\n");
+                } else {
+                    printf("You don't have enough gold to buy a health potion.\n");
+                }
+            } else if (choice == 'I' || choice == 'i') {
+                printf("You ignore the merchant and continue on your journey.\n");
+            } else {
+                printf("Invalid choice. The merchant leaves.\n");
+            }
+            break;
+
+        case 2: // Lost traveler
+            printf("You find a lost traveler who asks for help. What do you do?\n");
+            printf("(G)ive them some gold\n(A)sk for a reward\n(I)gnore them\n");
+            scanf(" %c", &choice);
+
+            if (choice == 'G' || choice == 'g') {
+                int donation = rand() % 10 + 5;
+                if (player->money >= donation) {
+                    player->money -= donation;
+                    printf("You give the traveler %dG. They thank you and give you a small trinket!\n", donation);
+                } else {
+                    printf("You don't have enough gold to help the traveler.\n");
+                }
+            } else if (choice == 'A' || choice == 'a') {
+                printf("The traveler gives you a map fragment as thanks for your kindness.\n");
+            } else if (choice == 'I' || choice == 'i') {
+                printf("You ignore the traveler and move on.\n");
+            } else {
+                printf("Invalid choice. The traveler leaves.\n");
+            }
+            break;
+
+        default:
+            printf("You continue your journey without incident.\n");
+            break;
+    }
+}
+
+void GameLoop(player *player)
+{
+   int encounters = 6;
+
+   while (encounters > 0 && player->health > 0)
+   {
+      printf("\nYou continue on your journey...\n");
+      Encounter(player);
+      encounters--;
+   }
+
+   // here we put the final encounters for each storyline
+   if (encounters <= 0)
+   {
+      switch (loc)
+      {
+      case City:
+         printf("In the distance you spot the church. A hooded figure awaits you at the door.\n");
+         break;
+      case Forest:
+         printf("You peel away foliage to reveal a serence clearing. In it stands the thousand-year-old oak. The crown is hidden somewhere here.\n");
+
+         break;
+      case Mountains:
+         printf("You have arrived at the beast's lair. The air smells strongly of metal.\n");
+         break;
+      }
+   }
+
+   if (player->health > 0)
+   {
+      printf("Congratulations! You survived your adventure!\n");
+      printf("Final Gold: %dG\n", player->money);
+   }
+}
+
+
+int main()
+{
+   srand(time(NULL)); // Seed for random numbers
+
+   player player = {"Hero", 20, 50, WoodenSword, {compass, HealthPotion}};
+
+   startadv(&player);
+   GameLoop(&player);
+
+   return 0;
+}
