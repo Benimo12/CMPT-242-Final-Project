@@ -45,7 +45,7 @@ int gameover(){//This should be the game over screen
 int restart(){//If all things go well, this should go to startadv
    char input;
    printf(">Restart?(y/n)\n");
-   scanf(input);
+   scanf("%c\n",input);
    if (input == 'y' || input == 'Y'){//Goes to the beginning of the adventure
       startadv();
    }else if (input == 'n' ||input == 'N'){//Completely exits the program
@@ -91,7 +91,7 @@ int startadv(){//Adventure starts here.
    printf("King: You can go to the (F)orest to retrieve my crown, the (C)ity to retrieve my court's archives or to the (M)ountains to defeat the beast of unknown depths.\n");
    char choice;
    printf("Which will it be?\n(F)orest\n(C)ity\n(M)ountains\n");
-   scanf(choice);
+   scanf("%c\n",choice);
    printf("King: Good Choice! Here is 50 G! and a compass.\n");
    money = money+50;
    if (choice == 'c' || choice == 'C'){
@@ -117,8 +117,7 @@ int City(int health, int money, char name[100]){//This is for the City storyline
    char choice;
    printf("You are at the town square, Where do you go?\n");
    printf("(N)orth: Market Square\n(S)outh: Church\n(E)ast:Ranches and stables\n(W)est:WestBridge");
-   scanf(choice);
-
+   scanf("%c\n",choice);
 }
 int Forest(int health, int money, char name[100]){// This is for the forest storyline
    HealthStatus(health);
@@ -146,7 +145,7 @@ int Battle(int health, int money, char name[100], int enemyHealth, int enemyDama
       HealthStatus(health);
       EnemyHealthStatus(enemyHealth);
       printf("How do you want to interact?\n(A)ttack?\n(D)efend?\n(R)un?\n");
-      scanf(interact);
+      scanf("%c\n",interact);
       if (interact == 'A'||interact == 'a'){//Attack scenario. Takes off hitpoints from the opponent during your turn.
          enemyHealth -= damage;
          printf("You took %d from %c!\n", damage, enemyname);
